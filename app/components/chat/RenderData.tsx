@@ -5,11 +5,11 @@ import type { PaymentState, ChatMessage } from "@/utils/types";
 import { CreditCardIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
 import icons from "payments-icons-library";
 
-// Helper to fetch brand icon (visa/mastercard/amex)
+
 const getBrandIcon = (brand?: string) => {
   if (!brand) return null;
   try {
-    const key = brand.toLowerCase(); // expects 'visa' | 'mastercard' | 'amex'
+    const key = brand.toLowerCase(); 
     const res: any = icons.getIcon(key, "sm");
     return res?.icon_url || null;
   } catch {
@@ -32,7 +32,6 @@ export function RenderData({
   const typingNotFinished =
     (msg as any).fullText && msg.text !== (msg as any).fullText;
 
-  // --- Add New Card form state / helpers (always declared to keep hooks stable) ---
   const [cardData, setCardData] = useState({
     cardNumber: "",
     nameOnCard: "",
