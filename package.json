@@ -11,6 +11,7 @@
     "@heroicons/react": "^2.2.0",
     "@openai/agents": "^0.1.4",
     "next": "15.5.3",
+    "payments-icons-library": "^1.1.7",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
