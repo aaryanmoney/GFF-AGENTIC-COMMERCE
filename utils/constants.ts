@@ -1,1 +1,1 @@
-export const GPT4 = 'gpt-4.1';
+export const GPT4 = "gpt-4.1-2025-04-14";

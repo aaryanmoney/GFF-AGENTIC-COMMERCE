@@ -1,43 +1,94 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import ShoppingAgentSession from '@/app/agents/shoppingAgent/agent';
 
-export async function POST(req: NextRequest) {
+export const runtime = 'nodejs';
+
+function extractText(runResult: any): string {
+  // New robust extraction for @openai/agents RunResult
+  if (!runResult) return '';
+  if (typeof runResult === 'string') return runResult;
+  if (runResult.output_text) return runResult.output_text;
+
+  const state = runResult.state;
+  if (state?._currentStep?.output && typeof state._currentStep.output === 'string') {
+    return state._currentStep.output;
+  }
+
+  const modelResponses = state?._modelResponses || [];
+  for (const mr of modelResponses) {
+    const outputs = mr.output || [];
+    for (const o of outputs) {
+      if (o.role === 'assistant' && Array.isArray(o.content)) {
+        const txtParts = o.content
+          .filter((c: any) => c.type === 'output_text' && c.text)
+          .map((c: any) => c.text);
+        if (txtParts.length) return txtParts.join('\n');
+      }
+    }
+  }
+
+  const genItems = state?._generatedItems;
+  if (Array.isArray(genItems)) {
+    const out = genItems
+      .map((gi: any) => gi?.content?.[0]?.text)
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+    if (out) return out;
+  }
+
+  return JSON.stringify(runResult);
+}
+
+function extractMultipleJSONObjectStrings(src: string): string[] {
+  const out: string[] = [];
+  let depth = 0, start = -1;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (c === "{") { if (depth === 0) start = i; depth++; }
+    else if (c === "}") {
+      depth--;
+      if (depth === 0 && start >= 0) { out.push(src.slice(start, i + 1)); start = -1; }
+    }
+  }
+  return out;
+}
+
+function normalizeToStrictJSON(raw: string): string {
+  let txt = raw.trim();
+  if (txt.startsWith('```')) {
+    txt = txt.replace(/^```(?:json)?/, '').replace(/```$/, '').trim();
+  }
+  const objs = extractMultipleJSONObjectStrings(txt);
+  if (objs.length > 1) return objs.map(o => o.trim()).join("");
   try {
-    const body = await req.json();
-    const { message, conversationHistory } = body;
+    const obj = JSON.parse(txt);
+    if (obj && obj.agent && obj.type) return txt;
+  } catch {
+    // fall through
+  }
+  // Fallback minimal message
+  return JSON.stringify({
+    agent: 'shopping',
+    type: 'MESSAGE',
+    text: txt.slice(0, 1500),
+    data: {}
+  });
+}
 
-    if (!message) {
-      return NextResponse.json({
-        success: false,
-        error: 'message is required'
-      }, { status: 400 });
-    }
-
+export async function POST(req: Request) {
+  try {
+    const { message, conversationHistory } = await req.json();
     const session = new ShoppingAgentSession();
-    await session.initialize();
-
-    try {
-      const result = await session.sendMessage(
-        message,
-        conversationHistory,
-      );
-
-      await session.close();
-
-      return NextResponse.json({
-        success: true,
-        response: result,
-      });
-    } catch (e: any) {
-      throw e;
-    }
-
-  } catch (error: any) {
-    console.error('Error sending message:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to send message',
-      details: error.message
-    }, { status: 500 });
+    const runResult = await session.sendMessage(message, conversationHistory);
+    const raw = extractText(runResult);
+    const response = normalizeToStrictJSON(raw);
+    return NextResponse.json({ response });
+  } catch (e: any) {
+    console.error('shopping-agent error', e);
+    return NextResponse.json(
+      { response: JSON.stringify({ agent: 'shopping', type: 'ERROR', text: 'Agent error', data: {} }) },
+      { status: 500 }
+    );
   }
 }
