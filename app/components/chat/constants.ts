@@ -2,7 +2,7 @@ export const CASHFREE_LOGO =
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlmGx-0creMf02iS6YAko6ZhDcEQVk6WvCUQ&s";
 
 export const agentMeta = {
-  shopping: { label: "Shopping", icon: "🛍️" },
+  shopping: { label: "CAIA", icon: "🛍️" },
   cashfree: { label: "Cashfree", logo: CASHFREE_LOGO },
 } as const;
 

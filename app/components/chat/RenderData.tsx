@@ -4,13 +4,19 @@ import { getProductImage } from "./constants";
 import type { PaymentState, ChatMessage } from "@/utils/types";
 import { CreditCardIcon, LockClosedIcon, ShieldCheckIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import icons from "payments-icons-library";
+import {
+  formatCardNumber,
+  formatExpiry,
+  getCardType,
+} from "@/app/utils/cardUtils";
+import { validateCardField } from "@/app/utils/cardValidation";
 
 
 const getBrandIcon = (brand?: string) => {
   if (!brand) return null;
   try {
     const key = brand.toLowerCase(); 
-    const res: any = icons.getIcon(key, "sm");
+    const res: any = icons.getIcon(key, "svg");
     return res?.icon_url || null;
   } catch {
     return null;
@@ -40,60 +46,8 @@ export function RenderData({
   });
   const [focused, setFocused] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
 
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/g, "");
-    const parts = [];
-    for (let i = 0; i < v.length; i += 4) parts.push(v.substring(i, i + 4));
-    return parts.join(" ");
-  };
-  const formatExpiry = (value: string) => {
-    const v = value.replace(/[^0-9]/g, "");
-    if (v.length <= 2) return v;
-    return v.substring(0, 2) + "/" + v.substring(2, 4);
-  };
-  const getCardType = (n: string) => {
-    const c = n.replace(/\s/g, "");
-    if (c.startsWith("4")) return "visa";
-    if (c.startsWith("5") || c.startsWith("2")) return "mastercard";
-    if (c.startsWith("3")) return "amex";
-    return "generic";
-  };
-  const validateField = (name: string, value: string) => {
-    const next = { ...errors };
-    switch (name) {
-      case "cardNumber": {
-        const digits = value.replace(/\s/g, "");
-        if (!digits) next.cardNumber = "Required";
-        else if (digits.length < 13 || digits.length > 19)
-          next.cardNumber = "Invalid number";
-        else delete next.cardNumber;
-        break;
-      }
-      case "nameOnCard":
-        if (!value.trim()) next.nameOnCard = "Required";
-        else if (value.trim().length < 2) next.nameOnCard = "Too short";
-        else delete next.nameOnCard;
-        break;
-      case "expiry": {
-        if (!/^\d{2}\/\d{2}$/.test(value)) next.expiry = "MM/YY";
-        else {
-          const [m, y] = value.split("/").map(Number);
-          const cy = new Date().getFullYear() % 100;
-          const cm = new Date().getMonth() + 1;
-          if (m < 1 || m > 12) next.expiry = "Bad month";
-          else if (y < cy || (y === cy && m < cm)) next.expiry = "Expired";
-          else delete next.expiry;
-        }
-        break;
-      }
-      case "cvv":
-        if (!/^\d{3,4}$/.test(value)) next.cvv = "3-4 digits";
-        else delete next.cvv;
-        break;
-    }
-    setErrors(next);
-  };
   const handleInput = (field: string, val: string) => {
     let v = val;
     if (field === "cardNumber") v = formatCardNumber(val);
@@ -101,7 +55,7 @@ export function RenderData({
     if (field === "cvv") v = v.replace(/[^0-9]/g, "").slice(0, 4);
     if (field === "nameOnCard") v = v.toUpperCase().replace(/[^A-Z\s]/g, "");
     setCardData(d => ({ ...d, [field]: v }));
-    validateField(field, v);
+    setErrors(validateCardField(field, v, errors));
   };
   const canSubmit =
     cardData.cardNumber &&
@@ -120,32 +74,32 @@ export function RenderData({
         ? msg.data.products
         : products;
     return (
-      <div className="mt-3 grid gap-3">
-        {list.map((p: any) => {
-          const img = p.image || getProductImage(p.id);
-          return (
-            <div
-              key={p.id}
-              className="rounded border border-neutral-700 p-3 flex gap-3 bg-neutral-800/50 fade-in"
-            >
-              {img && (
-                <img
-                  src={img}
-                  alt={p.title}
-                  className="w-16 h-16 object-cover rounded-md border border-neutral-700"
-                  loading="lazy"
-                />
-              )}
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="text-sm font-medium">{p.title}</div>
-                <div className="text-xs font-semibold">
-                  {p.price} {p.currency}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+  {list.map((p: any) => {
+    const img = p.image || getProductImage(p.id);
+    return (
+      <div
+        key={p.id}
+        className="rounded border border-neutral-700 p-3 flex gap-3 bg-neutral-800/50 fade-in"
+      >
+        {img && (
+          <img
+            src={img}
+            alt={p.title}
+            className="w-16 h-16 object-cover rounded-md border border-neutral-700"
+            loading="lazy"
+          />
+        )}
+        <div className="flex-1 flex flex-col gap-1">
+          <div className="text-sm font-medium">{p.title}</div>
+          <div className="text-xs font-semibold">
+            {p.price} {p.currency}
+          </div>
+        </div>
       </div>
+    );
+  })}
+</div>
     );
   }
 
@@ -173,7 +127,7 @@ export function RenderData({
   if (msg.type === "HANDOFF") {
     return (
       <div className="mt-3 text-xs text-amber-400 fade-in">
-        Handoffed to Cashfree Agent. Preparing payment...
+        Handed off to Cashfree Payments.
       </div>
     );
   }
@@ -182,7 +136,7 @@ export function RenderData({
     const cards = msg.data.cards || [];
     return (
       <div className="mt-3 fade-in w-full max-w-md">
-        <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl border border-neutral-700 shadow-xl overflow-hidden">
+        <div className=" rounded-2xl overflow-hidden">
           <div className="px-5 py-3 border-b border-neutral-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
@@ -205,13 +159,19 @@ export function RenderData({
             )}
             {cards.map((c: any) => {
               const iconUrl = getBrandIcon(c.brand);
+              const isLoading = loadingCardId === c.id && paymentState === "PROCESSING";
               return (
                 <button
                   key={c.id}
-                  onClick={() => onSelectCard(c.id)}
-                  className="group w-full relative flex items-center gap-4 p-4 rounded-xl bg-neutral-800/60 border border-neutral-700 hover:border-emerald-500/50 hover:bg-neutral-800 transition duration-200 text-left"
+                  onClick={() => {
+                    if (paymentState === "PROCESSING") return;
+                    setLoadingCardId(c.id);
+                    onSelectCard(c.id);
+                  }}
+                  disabled={paymentState === "PROCESSING"}
+                  className="group w-full relative flex items-center gap-4 p-4 rounded-xl bg-neutral-800/60 border border-neutral-700 hover:border-emerald-500/50 hover:bg-neutral-800 transition duration-200 text-left disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <div className="w-12 h-8 flex items-center justify-center rounded-md bg-neutral-700/60 border border-neutral-600 overflow-hidden">
+                  <div className="w-12 h-8 flex items-center justify-center rounded-md overflow-hidden">
                     {iconUrl ? (
                       <img
                         src={iconUrl}
@@ -236,8 +196,24 @@ export function RenderData({
                       {c.nameOnCard && <span>{c.nameOnCard}</span>}
                     </div>
                   </div>
-                  <div className="text-[11px] font-semibold text-emerald-400 opacity-0 group-hover:opacity-100 transition">
-                    Use
+                  <div
+                    aria-busy={isLoading}
+                    className={`ml-auto text-[11px] font-semibold px-3 py-1 rounded-md border
+                      ${
+                        isLoading
+                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                          : "border-transparent text-emerald-400/80 bg-transparent hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-300"
+                      }
+                      transition flex items-center gap-2
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                      </>
+                    ) : (
+                      "Use"
+                    )}
                   </div>
                   <span className="pointer-events-none absolute inset-0 rounded-xl ring-0 group-hover:ring-1 group-hover:ring-emerald-500/40" />
                 </button>
@@ -275,7 +251,10 @@ export function RenderData({
               onSubmit={e => {
                 e.preventDefault();
                 ["cardNumber", "nameOnCard", "expiry", "cvv"].forEach(f =>
-                  validateField(f, cardData[f as keyof typeof cardData])
+                  setErrors(prevErrors => ({
+                    ...prevErrors,
+                    ...validateCardField(f, cardData[f as keyof typeof cardData], {})
+                  }))
                 );
                 if (!canSubmit) return;
                 onSubmitNewCard(e as any);
@@ -458,7 +437,7 @@ export function RenderData({
                   ) : (
                     <>
                       <LockClosedIcon className="w-4 h-4" />
-                      Add Card
+                      Save and Proceed
                     </>
                   )}
                 </button>
@@ -556,7 +535,7 @@ export function RenderData({
                   <div className="space-y-1 col-span-2">
                     <p className="text-neutral-500">Payment Method</p>
                     <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-neutral-800/60 border border-neutral-700">
-                      <div className="w-11 h-7 rounded-md bg-neutral-700/60 border border-neutral-600 flex items-center justify-center overflow-hidden">
+                      <div className="w-11 h-7 rounded-md  flex items-center justify-center overflow-hidden">
                         {brandIcon ? (
                           <img
                             src={brandIcon}
@@ -596,9 +575,6 @@ export function RenderData({
                     Secured by encrypted processing.
                   </div>
                 )}
-                <div className="text-[10px] text-neutral-500">
-                  Timestamp: {new Date().toLocaleString()}
-                </div>
               </div>
             </div>
         </div>

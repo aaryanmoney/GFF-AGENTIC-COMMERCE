@@ -56,6 +56,21 @@ export default function Chat(props: ChatProps) {
 
   useTypingEffect(messages, setMessages);
 
+  useEffect(() => {
+    if (!isSending) {
+      bottomInputRef.current?.focus();
+    }
+  }, [isSending]);
+
+  useEffect(() => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return;
+    const full = (lastAssistant as any).fullText;
+    if (!full || lastAssistant.text === full) {
+      bottomInputRef.current?.focus();
+    }
+  }, [messages]);
+
   const disabledInput =
     isSending ||
     paymentState === "PROCESSING" ||
@@ -136,7 +151,7 @@ export default function Chat(props: ChatProps) {
               const confirmationPayload = {
                 agent: "shopping",
                 type: "ORDER_CONFIRMATION",
-                text: `Your order has been placed and will be delivered within 2-3 business days.`,
+                text: `Your order has been placed and will be delivered within 2-3 business days. We will soon the send the tracking information to your registered email.`,
                 data: {
                   orderId,
                   estimatedDelivery: "2-3 business days"
@@ -349,7 +364,7 @@ export default function Chat(props: ChatProps) {
       >
         <div className="text-center max-w-md space-y-5 px-6">
           <h2 className="text-4xl font-semibold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-            Hello,
+            Hello, <span className="italic text-pink-400">from CAIA</span>
           </h2>
           <p className="text-sm text-neutral-400 leading-relaxed">
             Let's start shopping! 

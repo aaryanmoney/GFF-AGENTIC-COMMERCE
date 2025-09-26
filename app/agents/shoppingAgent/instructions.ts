@@ -56,7 +56,7 @@ When product (and size if apparel) AND address are confirmed and user indicates 
 {
   "agent":"shopping",
   "type":"HANDOFF",
-  "text":"Handoff to payment.",
+  "text":"Requesting Cashfree Payments to process the transaction.",
   "data":{
     "orderId":"ord_<someId>",
     "amount": <number>, // product price * quantity
