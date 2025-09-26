@@ -7,6 +7,7 @@ import { useTypingEffect } from "./chat/useTypingEffect";
 import { agentMeta } from "./chat/constants";
 import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 import React from "react";
+import { CASHFREE_LOGO } from "./chat/constants";
 
 type ActiveAgent = "shopping" | "cashfree";
 
@@ -310,53 +311,88 @@ export default function Chat(props: ChatProps) {
 
   return (
     <div className="relative w-full h-full flex flex-col bg-neutral-950 text-neutral-100 overflow-hidden">
-      <div className="absolute top-4 left-2 right-2 z-30  flex items-center justify-between pointer-events-none">
-        <button
-          onClick={resetChat}
-            className="pointer-events-auto text-sm font-medium px-3 py-1 rounded-full bg-neutral-800/70 hover:bg-neutral-700 border border-neutral-700 transition"
-        >
-          + New Chat
-        </button>
-        <div className="relative pointer-events-auto">
-          <button
-            onClick={() => setShowCustomerMenu(o => !o)}
-            className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-sm font-semibold shadow ring-2 ring-neutral-900"
-            title={customerVariant === "C" ? "Customer: has saved cards" : "Customer: no cards"}
-          >
-            {customerVariant}
-          </button>
-          {showCustomerMenu && (
-            <div className="absolute right-0 mt-2 w-32 rounded-lg border border-neutral-700 bg-neutral-900 shadow-xl text-xs overflow-hidden z-40">
-              <div className="px-3 py-2 font-medium text-neutral-400">
-                Select User
-              </div>
-              <button
-                onClick={() => {
-                  setCustomerId("demo_with_cards");
-                  setShowCustomerMenu(false);
-                }}
-                className={`w-full text-left px-3 py-2 hover:bg-neutral-800 ${
-                  customerId === "demo_with_cards" ? "text-indigo-400" : "text-neutral-300"
-                }`}
-              >
-                C (with cards)
-              </button>
-              <button
-                onClick={() => {
-                  setCustomerId("demo_no_cards");
-                  setShowCustomerMenu(false);
-                }}
-                className={`w-full text-left px-3 py-2 hover:bg-neutral-800 ${
-                  customerId === "demo_no_cards" ? "text-indigo-400" : "text-neutral-300"
-                }`}
-              >
-                NC (no cards)
-              </button>
+      <nav className="w-full bg-neutral-900 shadow-lg border-b border-neutral-800 px-4 py-3 z-30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <img 
+                src={CASHFREE_LOGO} 
+                alt="Cashfree" 
+                className="h-8 w-8 object-contain"
+              />
+              <span className="text-xl font-semibold text-white">Cashfree</span>
             </div>
-          )}
+          <div className="hidden sm:block h-6 w-px bg-neutral-600"></div>
+          <span className="hidden sm:inline-block text-sm text-neutral-300 font-medium">
+            Payment Assistant
+          </span>
         </div>
-      </div>
 
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={resetChat}
+            className="flex items-center space-x-2 text-sm font-medium px-4 py-2 rounded-lg bg-neutral-800/70 hover:bg-neutral-700 text-white transition-colors duration-200 border border-neutral-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>New Chat</span>
+          </button>
+      
+          <div className="relative">
+            <button
+              onClick={() => setShowCustomerMenu(o => !o)}
+              className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-sm font-semibold text-white shadow ring-2 ring-neutral-900"
+              title={customerVariant === "C" ? "Customer: has saved cards" : "Customer: no cards"}
+            >
+              {customerVariant}
+            </button>
+        
+            {showCustomerMenu && (
+            <div className="absolute right-0 mt-2 w-40 rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl text-sm overflow-hidden z-40">
+              <div className="px-4 py-3 font-semibold text-neutral-400 bg-neutral-800 border-b border-neutral-700">
+                Select Customer
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setCustomerId("demo_with_cards");
+                    setShowCustomerMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 hover:bg-neutral-800 transition-colors duration-150 ${
+                    customerId === "demo_with_cards" 
+                      ? "text-indigo-400 bg-neutral-800 font-medium" 
+                      : "text-neutral-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Customer (C)</span>
+                    <span className="text-xs text-neutral-500">with cards</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setCustomerId("demo_no_cards");
+                    setShowCustomerMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 hover:bg-neutral-800 transition-colors duration-150 ${
+                    customerId === "demo_no_cards" 
+                      ? "text-indigo-400 bg-neutral-800 font-medium" 
+                      : "text-neutral-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>New Customer (NC)</span>
+                    <span className="text-xs text-neutral-500">no cards</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+            )}
+            </div>
+          </div>
+        </div>
+      </nav>
       <div
         className={`absolute inset-0 z-10 flex flex-col items-center justify-center gap-8 transition-all duration-500 ${
           hasStarted ? "opacity-0 pointer-events-none" : "opacity-100"
@@ -385,7 +421,7 @@ export default function Chat(props: ChatProps) {
       </div>
 
       <div
-        className={`flex-1 min-h-0 flex flex-col pt-16 transition-opacity duration-500 ${
+        className={`flex-1 min-h-0 flex flex-col transition-opacity duration-500 ${
           hasStarted ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
