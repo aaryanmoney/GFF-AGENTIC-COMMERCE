@@ -146,6 +146,30 @@ export default function Chat(props: ChatProps) {
             setActiveAgent("shopping");
             setTimeout(() => setPaymentState("IDLE"), 500);
 
+            setTimeout(() => {
+              const backHandoffPayload = {
+                agent: "cashfree",
+                type: "HANDOFF",
+                text: "Returning you to the shopping assistant for order confirmation.",
+                data: { to: "shopping" }
+              };
+              const backMsg: ChatMessage = {
+                id: crypto.randomUUID?.() ?? Math.random().toString(36),
+                createdAt: Date.now(),
+                agent: "cashfree",
+                role: "assistant",
+                type: "HANDOFF",
+                text: "",
+                data: backHandoffPayload.data,
+                // @ts-ignore
+                fullText: backHandoffPayload.text
+              };
+              setMessages(m => [...m, backMsg]);
+              setConversationHistory(prev =>
+                (prev || mergedHistory) + `\nAssistant: ${JSON.stringify(backHandoffPayload)}`
+              );
+            }, 400);
+
             // Schedule follow-up order confirmation from shopping agent
             const orderId = assistantMsg.data?.orderId;
             setTimeout(() => {
@@ -173,7 +197,7 @@ export default function Chat(props: ChatProps) {
               setConversationHistory(prev =>
                 (prev || mergedHistory) + `\nAssistant: ${JSON.stringify(confirmationPayload)}`
               );
-            }, 1200); 
+            }, 2200); 
           }
 
           if (assistantMsg.type === "HANDOFF") {

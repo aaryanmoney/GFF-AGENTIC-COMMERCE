@@ -137,9 +137,13 @@ export function RenderData({
   }
 
   if (msg.type === "HANDOFF") {
+    const toShopping =
+      msg.agent === "cashfree" || msg.data?.to === "shopping";
     return (
       <div className="mt-3 text-xs text-amber-400 fade-in">
-        Handed off to Cashfree Payments.
+        {toShopping
+          ? "Handing off back to CAIA Agent."
+          : "Handed off to Cashfree Payments."}
       </div>
     );
   }
