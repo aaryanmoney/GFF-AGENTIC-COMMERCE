@@ -230,42 +230,63 @@ export function RenderData({
   }
 
   if (msg.type === "PAYMENT_NEED_NEW_CARD") {
+  const [cancelled, setCancelled] = useState(false);
+
+  if (cancelled) {
     return (
-      <div className="mt-3 fade-in">
-        <div className="w-full max-w-md">
-          <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl border border-neutral-700 shadow-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-700 bg-neutral-800/60 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                  <CreditCardIcon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">Add Payment Method</div>
-                  <div className="text-[11px] text-neutral-400">
-                    Enter card details securely
-                  </div>
-                </div>
+      <div className="mt-3 fade-in w-full max-w-md">
+        <div className="rounded-2xl border border-red-600/40 bg-gradient-to-br from-neutral-900 to-neutral-800 shadow-xl p-5 text-center">
+          <XCircleIcon className="w-10 h-10 text-red-400 mx-auto mb-2" />
+          <div className="text-sm font-semibold text-red-400">
+            Payment Cancelled
+          </div>
+          <p className="text-xs text-neutral-400 mt-1">
+            You cancelled the payment process.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 fade-in">
+      <div className="w-full max-w-md">
+        <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl border border-neutral-700 shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="px-5 py-4 border-b border-neutral-700 bg-neutral-800/60 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <CreditCardIcon className="w-5 h-5 text-white" />
               </div>
-              <div className="flex items-center gap-1 text-emerald-400 text-xs font-medium">
-                <LockClosedIcon className="w-4 h-4" />
-                Secure
+              <div>
+                <div className="text-sm font-semibold">Add Payment Method</div>
+                <div className="text-[11px] text-neutral-400">
+                  Enter card details securely
+                </div>
               </div>
             </div>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                ["cardNumber", "nameOnCard", "expiry", "cvv"].forEach(f =>
-                  setErrors(prevErrors => ({
-                    ...prevErrors,
-                    ...validateCardField(f, cardData[f as keyof typeof cardData], {})
-                  }))
-                );
-                if (!canSubmit) return;
-                onSubmitNewCard(e as any);
-              }}
-              className="p-5 space-y-5"
-            >
-              <div className="space-y-1">
+            <div className="flex items-center gap-1 text-emerald-400 text-xs font-medium">
+              <LockClosedIcon className="w-4 h-4" />
+              Secure
+            </div>
+          </div>
+
+          {/* Form */}
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              ["cardNumber", "nameOnCard", "expiry", "cvv"].forEach(f =>
+                setErrors(prevErrors => ({
+                  ...prevErrors,
+                  ...validateCardField(f, cardData[f as keyof typeof cardData], {})
+                }))
+              );
+              if (!canSubmit) return;
+              onSubmitNewCard(e as any);
+            }}
+            className="p-5 space-y-5"
+          >
+            <div className="space-y-1">
                 <label className="block text-xs font-medium text-neutral-300">
                   Card Number
                 </label>
@@ -410,48 +431,47 @@ export function RenderData({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
-                <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
-                <span className="text-[11px] text-emerald-400">
-                  Your data is safe & never exposed to agent.
-                </span>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+              <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
+              <span className="text-[11px] text-emerald-400">
+                Your data is safe & never exposed to agent.
+              </span>
+            </div>
 
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="button"
-                  disabled={paymentState === "PROCESSING"}
-                  onClick={() => {
-                    setCardData({ cardNumber: "", nameOnCard: "", expiry: "", cvv: "" });
-                    setErrors({});
-                  }}
-                  className="flex-1 text-xs font-medium rounded-lg border border-neutral-600 bg-neutral-800/50 hover:bg-neutral-700/60 disabled:opacity-50 px-4 py-2.5 transition"
-                >
-                  Reset
-                </button>
-                <button
-                  disabled={!canSubmit}
-                  className="flex-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 px-4 py-2.5 flex items-center justify-center gap-2 transition"
-                >
-                  {paymentState === "PROCESSING" ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <LockClosedIcon className="w-4 h-4" />
-                      Save and Proceed
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Buttons */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                disabled={paymentState === "PROCESSING"}
+                onClick={() => setCancelled(true)}
+                className="flex-1 text-xs font-medium rounded-lg border border-red-600 bg-neutral-800/50 hover:bg-red-600/20 disabled:opacity-50 px-4 py-2.5 transition text-red-400"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!canSubmit}
+                className="flex-1 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 px-4 py-2.5 flex items-center justify-center gap-2 transition"
+              >
+                {paymentState === "PROCESSING" ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <LockClosedIcon className="w-4 h-4" />
+                    Save and Proceed
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   if (msg.type === "PAYMENT_PROCESSING") {
     return (
