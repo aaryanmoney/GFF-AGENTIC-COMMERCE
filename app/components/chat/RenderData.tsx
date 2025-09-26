@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { products } from "@/utils/mockData";
 import { getProductImage } from "./constants";
 import type { PaymentState, ChatMessage } from "@/utils/types";
-import { CreditCardIcon, LockClosedIcon, ShieldCheckIcon } from "@heroicons/react/24/solid";
+import { CreditCardIcon, LockClosedIcon, ShieldCheckIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import icons from "payments-icons-library";
 
 
@@ -112,7 +112,6 @@ export function RenderData({
     paymentState !== "PROCESSING";
 
   const cardType = getCardType(cardData.cardNumber);
-  // --- end helpers ---
 
   if (msg.type === "PRODUCT_LIST") {
     if (typingNotFinished) return null;
@@ -347,7 +346,6 @@ export function RenderData({
                 )}
               </div>
 
-              {/* Name */}
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-neutral-300">
                   Name on Card
@@ -374,7 +372,6 @@ export function RenderData({
                 )}
               </div>
 
-              {/* Expiry & CVV */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-neutral-300">
@@ -430,7 +427,6 @@ export function RenderData({
                 </div>
               </div>
 
-              {/* Security */}
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
                 <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
                 <span className="text-[11px] text-emerald-400">
@@ -483,22 +479,128 @@ export function RenderData({
   }
 
   if (msg.type === "PAYMENT_RESULT") {
+    const status = (msg.data.status || "SUCCESS").toUpperCase();
+    const isSuccess = status === "SUCCESS";
+    const brandIcon = getBrandIcon(msg.data.card?.brand);
     return (
-      <div className="mt-3 border border-emerald-600/40 bg-emerald-600/10 rounded p-3 text-xs fade-in">
-        <div className="font-medium text-emerald-400">Payment Success</div>
-        <div className="mt-1 space-y-1">
-          <div>Order: {msg.data.orderId}</div>
-          <div>
-            Amount: {msg.data.amount} {msg.data.currency}
+      <div className="mt-4 w-full max-w-md fade-in">
+        <div
+          className={`relative overflow-hidden rounded-2xl border shadow-xl ring-1 backdrop-blur-sm
+            ${
+              isSuccess
+                ? "border-emerald-600/40 ring-emerald-500/10 bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-800"
+                : "border-red-600/40 ring-red-500/10 bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-800"
+            }`}
+        >
+          <div className="absolute inset-0 pointer-events-none">
+            <div
+              className={`absolute -top-24 -right-16 w-72 h-72 rounded-full opacity-20 blur-3xl
+                ${isSuccess ? "bg-emerald-600/30" : "bg-red-600/30"}`}
+            />
+            <div
+              className={`absolute -bottom-24 -left-16 w-72 h-72 rounded-full opacity-10 blur-3xl
+                ${isSuccess ? "bg-teal-500/40" : "bg-rose-500/40"}`}
+            />
           </div>
-          {msg.data.card && (
-            <div>
-              Card: {msg.data.card.brand} •••• {msg.data.card.last4}
+
+            <div className={`px-5 py-4 border-b flex items-center gap-3 relative
+              ${isSuccess ? "border-emerald-600/30" : "border-red-600/30"}`}>
+              <div
+                className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-inner
+                ${isSuccess ? "bg-emerald-600/20 border border-emerald-500/30" : "bg-red-600/20 border border-red-500/30"}`}
+              >
+                {isSuccess ? (
+                  <CheckCircleIcon className="w-6 h-6 text-emerald-400" />
+                ) : (
+                  <XCircleIcon className="w-6 h-6 text-red-400" />
+                )}
+              </div>
+              <div className="flex-1">
+                <div
+                  className={`text-sm font-semibold tracking-wide
+                  ${isSuccess ? "text-emerald-400" : "text-red-400"}`}
+                >
+                  {isSuccess ? "Payment Successful" : "Payment Failed"}
+                </div>
+                <div className="text-[11px] text-neutral-400">
+                  {isSuccess
+                    ? "Your order has been confirmed."
+                    : (msg.data.errorMessage || "The payment couldn’t be completed.")}
+                </div>
+              </div>
+              {status && (
+                <div
+                  className={`text-[10px] px-2 py-1 rounded-md font-medium tracking-wide
+                  ${isSuccess ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30" : "bg-red-500/10 text-red-300 border border-red-500/30"}`}
+                >
+                  {status}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div className="mt-2 text-[10px] text-neutral-400">
-          You can continue shopping.
+
+            <div className="p-5 relative space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="space-y-1">
+                  <p className="text-neutral-500">Order ID</p>
+                  <p className="font-medium text-neutral-200 break-all">
+                    {msg.data.orderId || "-"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-neutral-500">Amount</p>
+                  <p className="font-semibold text-neutral-100">
+                    {msg.data.amount} {msg.data.currency}
+                  </p>
+                </div>
+                {msg.data.card?.brand && (
+                  <div className="space-y-1 col-span-2">
+                    <p className="text-neutral-500">Payment Method</p>
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-neutral-800/60 border border-neutral-700">
+                      <div className="w-11 h-7 rounded-md bg-neutral-700/60 border border-neutral-600 flex items-center justify-center overflow-hidden">
+                        {brandIcon ? (
+                          <img
+                            src={brandIcon}
+                            alt={msg.data.card.brand}
+                            className="w-10 h-5 object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className="text-[10px] font-semibold text-neutral-300 uppercase">
+                            {msg.data.card.brand}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-neutral-200 font-medium tracking-wide">
+                          •••• {msg.data.card.last4}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-emerald-400 font-medium">
+                        {isSuccess ? "Verified" : ""}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {msg.data.notes && (
+                <div className="text-[11px] text-neutral-400 leading-relaxed">
+                  {msg.data.notes}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                {isSuccess && (
+                  <div className="flex items-center gap-2 text-[11px] text-emerald-400">
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    Secured by encrypted processing.
+                  </div>
+                )}
+                <div className="text-[10px] text-neutral-500">
+                  Timestamp: {new Date().toLocaleString()}
+                </div>
+              </div>
+            </div>
         </div>
       </div>
     );

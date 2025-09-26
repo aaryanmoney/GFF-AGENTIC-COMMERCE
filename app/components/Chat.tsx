@@ -21,7 +21,6 @@ export default function Chat(props: ChatProps) {
   const [input, setInput] = useState("");
   const [activeAgent, setActiveAgent] = useState<ActiveAgent>("shopping");
 
-  // track selected customer (with cards / no cards)
   const [internalCustomerId, setInternalCustomerId] = useState(
     props.customerId ?? "demo_with_cards"
   );
@@ -35,18 +34,25 @@ export default function Chat(props: ChatProps) {
   const [pendingOrder, setPendingOrder] = useState<any>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const paymentResultTimeoutRef = useRef<number | null>(null);
 
-  // ref for bottom (main) input to focus after first message
   const bottomInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // focus bottom bar when first message appears
   useEffect(() => {
     if (messages.length === 1) bottomInputRef.current?.focus();
   }, [messages.length]);
+
+  useEffect(() => {
+    return () => {
+      if (paymentResultTimeoutRef.current) {
+        clearTimeout(paymentResultTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useTypingEffect(messages, setMessages);
 
@@ -123,6 +129,35 @@ export default function Chat(props: ChatProps) {
             setPaymentState("DONE");
             setActiveAgent("shopping");
             setTimeout(() => setPaymentState("IDLE"), 500);
+
+            // Schedule follow-up order confirmation from shopping agent
+            const orderId = assistantMsg.data?.orderId;
+            setTimeout(() => {
+              const confirmationPayload = {
+                agent: "shopping",
+                type: "ORDER_CONFIRMATION",
+                text: `Your order has been placed and will be delivered within 2-3 business days.`,
+                data: {
+                  orderId,
+                  estimatedDelivery: "2-3 business days"
+                }
+              };
+              const confirmMsg: ChatMessage = {
+                id: crypto.randomUUID?.() ?? Math.random().toString(36),
+                createdAt: Date.now(),
+                agent: "shopping",
+                role: "assistant",
+                type: "ORDER_CONFIRMATION",
+                text: "",
+                data: confirmationPayload.data,
+                // @ts-ignore
+                fullText: confirmationPayload.text
+              };
+              setMessages(m => [...m, confirmMsg]);
+              setConversationHistory(prev =>
+                (prev || mergedHistory) + `\nAssistant: ${JSON.stringify(confirmationPayload)}`
+              );
+            }, 1200); 
           }
 
           if (assistantMsg.type === "HANDOFF") {
@@ -149,9 +184,12 @@ export default function Chat(props: ChatProps) {
           const hasResult = structured.find(o => o.type === "PAYMENT_RESULT");
           if (hasProcessing && hasResult) {
             pushAssistant(hasProcessing);
-            setTimeout(() => {
+            if (paymentResultTimeoutRef.current) {
+              clearTimeout(paymentResultTimeoutRef.current);
+            }
+            paymentResultTimeoutRef.current = window.setTimeout(() => {
               pushAssistant(hasResult);
-            }, 200);
+            }, 2000);
             structured
               .filter(o => o !== hasProcessing && o !== hasResult)
               .forEach(o => pushAssistant(o));
@@ -234,6 +272,10 @@ export default function Chat(props: ChatProps) {
   };
 
   const resetChat = () => {
+    if (paymentResultTimeoutRef.current) {
+      clearTimeout(paymentResultTimeoutRef.current);
+      paymentResultTimeoutRef.current = null;
+    }
     setMessages([]);
     setConversationHistory("");
     setActiveAgent("shopping");
@@ -345,7 +387,6 @@ export default function Chat(props: ChatProps) {
           {isSending && activeAgent === "shopping" && (
             <div className="flex justify-start">
               <div className="flex items-start gap-3 animate-fade-in">
-                {/* Shopping agent avatar (standard style) */}
                 <div className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden bg-neutral-700 flex items-center justify-center text-lg shadow-md ring-2 ring-neutral-900/40">
                   {"logo" in shoppingMeta && (shoppingMeta as any).logo ? (
                     <img
