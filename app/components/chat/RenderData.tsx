@@ -28,11 +28,13 @@ export function RenderData({
   onSelectCard,
   onSubmitNewCard,
   paymentState,
+  onSelectProduct,
 }: {
   msg: ChatMessage;
   onSelectCard: (id: string) => void;
   onSubmitNewCard: (e: React.FormEvent<HTMLFormElement>) => void;
   paymentState: PaymentState;
+  onSelectProduct?: (product: any) => void;
 }) {
   if (!msg.data) return null;
   const typingNotFinished =
@@ -80,7 +82,13 @@ export function RenderData({
           return (
             <div
               key={p.id}
-              className="rounded border border-neutral-700 p-3 flex items-center gap-3 bg-neutral-800/50 fade-in"
+              className="rounded border border-neutral-700 p-3 flex items-center gap-3 bg-neutral-800/50 fade-in cursor-pointer hover:border-indigo-500/70"
+              onClick={() => {
+                if (onSelectProduct) {
+                  onSelectProduct(p);
+                }
+              }}
+              title={`Buy ${p.title}`}
             >
               {img && (
                 <div className="flex-shrink-0">

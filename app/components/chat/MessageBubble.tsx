@@ -7,17 +7,18 @@ export function MessageBubble({
   onSelectCard,
   onSubmitNewCard,
   paymentState,
+  onSelectProduct, 
 }: {
   msg: ChatMessage;
   onSelectCard: (id: string) => void;
   onSubmitNewCard: (e: React.FormEvent<HTMLFormElement>) => void;
   paymentState: PaymentState;
+  onSelectProduct?: (product: any) => void; 
 }) {
   const isUser = (msg as any).fromUser;
   const meta = !isUser
     ? agentMeta[msg.agent as keyof typeof agentMeta]
     : null;
-
 
   const agentAvatar =
     meta &&
@@ -63,6 +64,7 @@ export function MessageBubble({
           onSelectCard={onSelectCard}
           onSubmitNewCard={onSubmitNewCard}
           paymentState={paymentState}
+          onSelectProduct={onSelectProduct} 
         />
       </div>
     </div>

@@ -397,6 +397,9 @@ export default function Chat(props: ChatProps) {
               onSelectCard={handleSelectCard}
               onSubmitNewCard={handleNewCardSubmit}
               paymentState={paymentState}
+              onSelectProduct={p => {
+                sendToAgent(`I want to buy ${p.title}`);
+              }}
             />
           ))}
           {isSending && activeAgent === "shopping" && (
