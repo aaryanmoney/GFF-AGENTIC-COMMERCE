@@ -74,34 +74,38 @@ export function RenderData({
         ? msg.data.products
         : products;
     return (
-      <div className="mt-3 grid grid-cols-2 gap-3">
-  {list.map((p: any) => {
-    const img = p.image || getProductImage(p.id);
-    return (
-      <div
-        key={p.id}
-        className="rounded border border-neutral-700 p-3 flex gap-3 bg-neutral-800/50 fade-in"
-      >
-        {img && (
-          <img
-            src={img}
-            alt={p.title}
-            className="w-16 h-16 object-cover rounded-md border border-neutral-700"
-            loading="lazy"
-          />
-        )}
-        <div className="flex-1 flex flex-col gap-1">
-          <div className="text-sm font-medium">{p.title}</div>
-          <div className="text-xs font-semibold">
-            {p.price} {p.currency}
-          </div>
-        </div>
+      <div className="mt-3 space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+        {list.map((p: any) => {
+          const img = p.image || getProductImage(p.id);
+          return (
+            <div
+              key={p.id}
+              className="rounded border border-neutral-700 p-3 flex items-center gap-3 bg-neutral-800/50 fade-in"
+            >
+              {img && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={img}
+                    alt={p.title}
+                    className="w-14 h-14 object-cover rounded-md border border-neutral-700"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium mb-1 break-words">
+                  {p.title}
+                </div>
+                <div className="text-sm font-semibold">
+                  {p.price} {p.currency}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
-  })}
-</div>
-    );
-  }
+}
 
   if (msg.type === "PRODUCT_CONFIRMATION") {
     if (typingNotFinished) return null;
